@@ -1,6 +1,8 @@
 using Ecommerce.Application.Interface;
 using Ecommerce.Infrastructure.Data;
 using Ecommerce.Infrastructure.Services;
+using Ecommerce.Infrastructure.Validators;
+using EcommerceAPI.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -20,6 +22,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<UserValidator>();
 
 
 var app = builder.Build();
@@ -30,6 +33,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseHttpsRedirection();
 
 app.UseAuthorization();

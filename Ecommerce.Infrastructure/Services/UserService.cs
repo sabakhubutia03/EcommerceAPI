@@ -1,22 +1,27 @@
 ﻿using Ecommerce.Application.DTOs;
 using Ecommerce.Application.Interface;
 using Ecommerce.Domain.Entities;
+using Ecommerce.Domain.Exceptions;
 using Ecommerce.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Ecommerce.Infrastructure.Validators;
 
 namespace Ecommerce.Infrastructure.Services;
 
 public class UserService : IUserService
 {
-    public readonly ApplicationDbContext _context;
-    public readonly ILogger<UserService> _logger;
+    private readonly ApplicationDbContext _context;
+    private readonly UserValidator _validator;
+    private readonly ILogger<UserService> _logger;
 
-    public UserService(ApplicationDbContext context, ILogger<UserService> logger)
+    public UserService(ApplicationDbContext context, UserValidator validator, ILogger<UserService> logger)
     {
         _context = context;
+        _validator = validator;
         _logger = logger;
     }
+    
     public async Task<IEnumerable<UserDto>> GetAllUsers()
     {
         var getAllUsers = await _context.Users.ToListAsync();
@@ -37,29 +42,18 @@ public class UserService : IUserService
 
     public  async Task<UserDto> CreateUser(UserCreateDto userCreateDto)
     {
-        if (string.IsNullOrWhiteSpace(userCreateDto.Name))
-        {
-            _logger.LogError("User Name null or empty");
-            throw new Exception("User Name null or empty");
-        }
-
-        if (string.IsNullOrWhiteSpace(userCreateDto.Email))
-        {
-            _logger.LogError("User Email null or empty");
-            throw new Exception("User Email null or empty");
-        }
-
-        if (string.IsNullOrWhiteSpace(userCreateDto.PasswordHash))
-        {
-            _logger.LogError("Password Hash null or empty");  
-            throw new Exception("Password Hash null or empty");
-        }
-        
+        _validator.ValidateCreateUser(userCreateDto);
         var exists = await _context.Users.AnyAsync(u => u.Email == userCreateDto.Email);
-        if (!exists)
+        if (exists)
         {
             _logger.LogError("User already exists email {Email}", userCreateDto.Email);
-            throw new Exception("User already exists email");
+            throw new ApiException( 
+                "User already exists email",
+                "Conflict",
+                409,
+                $"Email already exists : {userCreateDto.Email}",
+                "/api/users/CreateUser"
+            );
         }
 
         var usernew = new User
@@ -67,7 +61,7 @@ public class UserService : IUserService
             Name = userCreateDto.Name,
             Email = userCreateDto.Email,
             PasswordHash = userCreateDto.PasswordHash,
-            CreatedAt = DateTime.Now,
+            CreatedAt = DateTime.UtcNow,
         };
         await _context.Users.AddAsync(usernew);
         await _context.SaveChangesAsync();
@@ -82,18 +76,68 @@ public class UserService : IUserService
 
     }
 
-    public Task<UserDto?> GetUserById(int id)
+    public  async Task<UserDto?> GetUserById(int id)
     {
-        throw new NotImplementedException();
+        var getByUserId = await _context.Users.FindAsync(id);
+        if (getByUserId == null)
+        {
+            _logger.LogInformation("No Users Found");
+            return null;
+        }
+
+        return new UserDto
+        {
+            Id = getByUserId.Id,
+            Name = getByUserId.Name,
+            Email = getByUserId.Email,
+            CreatedAt = getByUserId.CreatedAt,
+        };
     }
 
-    public Task<UserDto> UpdateUser(int id, UserUpdateDto userUpdateDto)
+    public async Task<UserDto> UpdateUser(int id, UserUpdateDto userUpdateDto)
     {
-        throw new NotImplementedException();
+        _validator.ValidateUpdateUser(userUpdateDto);
+        
+        var updateUser = await _context.Users.FindAsync(id);
+        if (updateUser == null)
+        {
+            _logger.LogWarning("No Users Found id {Id}", id);
+            throw new ApiException(
+                "User Not Found", 
+                "NotFound", 
+                404, 
+                $"No user found with id: {id}", 
+                "/api/users/UpdateUser"
+            );
+        }
+        if(!string.IsNullOrWhiteSpace(userUpdateDto.Name))
+            updateUser.Name = userUpdateDto.Name;
+        if (!string.IsNullOrWhiteSpace(userUpdateDto.Email))
+            updateUser.Email = userUpdateDto.Email;
+        if(!string.IsNullOrWhiteSpace(userUpdateDto.PasswordHash))
+            updateUser.PasswordHash = userUpdateDto.PasswordHash;
+        
+        await _context.SaveChangesAsync();
+        return new UserDto
+        {
+            Id = updateUser.Id,
+            Name = updateUser.Name,
+            Email = updateUser.Email,
+            CreatedAt = updateUser.CreatedAt,
+        };
     }
 
-    public Task<bool> DeleteUser(int id)
+    public async Task<bool> DeleteUser(int id)
     {
-        throw new NotImplementedException();
+        var deleteUser = await _context.Users.FindAsync(id);
+        if (deleteUser == null)
+        {
+            _logger.LogWarning("User id not  found {Id}", id);
+            return false;
+        }
+
+        _context.Users.Remove(deleteUser);
+        await _context.SaveChangesAsync();
+        return true;
     }
 }
