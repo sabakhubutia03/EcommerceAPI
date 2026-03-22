@@ -7,7 +7,7 @@ namespace EcommerceAPI.Controllers;
 [Route("api/user")]
 public class UserController : ControllerBase
 {
-    public readonly IUserService _userService;
+    private readonly IUserService _userService;
   
 
     public UserController(IUserService userService)
@@ -17,7 +17,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult> createUser(UserCreateDto userCreateDto)
+    public async Task<ActionResult> CreateUser(UserCreateDto userCreateDto)
     {
         var createUser = await _userService.CreateUser(userCreateDto);
         return CreatedAtAction(nameof(GetByIdUser), new { id = createUser.Id }, createUser);
