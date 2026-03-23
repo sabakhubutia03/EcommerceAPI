@@ -45,7 +45,7 @@ public class CategoryController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteCategory(int id)
     {
-        var deleteCategory = await _categoryService.DeleteCategory(id);
+        await _categoryService.DeleteCategory(id);
         return NoContent();
     }
 }
