@@ -23,8 +23,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<UserValidator>();
 builder.Services.AddScoped<CategoryValidator>();
+builder.Services.AddScoped<ProductValidator>();
 
 
 var app = builder.Build();
