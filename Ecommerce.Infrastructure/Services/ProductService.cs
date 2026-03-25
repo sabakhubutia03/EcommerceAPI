@@ -3,7 +3,6 @@ using Ecommerce.Application.Interface;
 using Ecommerce.Domain.Entities;
 using Ecommerce.Domain.Exceptions;
 using Ecommerce.Infrastructure.Data;
-using Ecommerce.Infrastructure.Validators;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ecommerce.Infrastructure.Services;
@@ -11,12 +10,10 @@ namespace Ecommerce.Infrastructure.Services;
 public class ProductService : IProductService
 { 
     private readonly ApplicationDbContext _context;
-    private readonly ProductValidator _validator;
 
-    public ProductService(ApplicationDbContext context, ProductValidator validator)
+    public ProductService(ApplicationDbContext context)
     {
         _context = context;
-        _validator = validator;
     }
     public async Task<IEnumerable<ProductDto>> GetAllProducts()
     {
@@ -58,7 +55,6 @@ public class ProductService : IProductService
 
     public async Task<ProductDto> CreateProduct(ProductCreateDto product)
     {
-        _validator.ValidateCreateProduct(product);
         
         var categoryId = await _context.Categories.FirstOrDefaultAsync(
             c => c.Id == product.CategoryId);
@@ -97,7 +93,6 @@ public class ProductService : IProductService
 
     public async Task<ProductDto> UpdateProduct(int id, ProductUpdateDto product)
     {
-        _validator.ValidateUpdateProduct(product);
         var productUpdateById = await _context.Products.FindAsync(id);
         if (productUpdateById == null)
         {

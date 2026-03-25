@@ -1,7 +1,7 @@
+using Ecommerce.Application;
 using Ecommerce.Application.Interface;
 using Ecommerce.Infrastructure.Data;
 using Ecommerce.Infrastructure.Services;
-using Ecommerce.Infrastructure.Validators;
 using EcommerceAPI.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -18,16 +18,16 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddApplication();
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IProductService, ProductService>();
-builder.Services.AddScoped<UserValidator>();
-builder.Services.AddScoped<CategoryValidator>();
-builder.Services.AddScoped<ProductValidator>();
-
+builder.Services.AddScoped<ICartService, CartService>();
 
 var app = builder.Build();
 

@@ -5,20 +5,17 @@ using Ecommerce.Domain.Exceptions;
 using Ecommerce.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Ecommerce.Infrastructure.Validators;
 
 namespace Ecommerce.Infrastructure.Services;
 
 public class UserService : IUserService
 {
     private readonly ApplicationDbContext _context;
-    private readonly UserValidator _validator;
     private readonly ILogger<UserService> _logger;
 
-    public UserService(ApplicationDbContext context, UserValidator validator, ILogger<UserService> logger)
+    public UserService(ApplicationDbContext context, ILogger<UserService> logger)
     {
         _context = context;
-        _validator = validator;
         _logger = logger;
     }
     
@@ -42,7 +39,6 @@ public class UserService : IUserService
 
     public  async Task<UserDto> CreateUser(UserCreateDto userCreateDto)
     {
-        _validator.ValidateCreateUser(userCreateDto);
         var exists = await _context.Users.AnyAsync(u => u.Email == userCreateDto.Email);
         if (exists)
         {
@@ -96,7 +92,6 @@ public class UserService : IUserService
 
     public async Task<UserDto> UpdateUser(int id, UserUpdateDto userUpdateDto)
     {
-        _validator.ValidateUpdateUser(userUpdateDto);
         
         var updateUser = await _context.Users.FindAsync(id);
         if (updateUser == null)
@@ -110,12 +105,22 @@ public class UserService : IUserService
                 "/api/users/UpdateUser"
             );
         }
-        if(!string.IsNullOrWhiteSpace(userUpdateDto.Name))
+
+        if (!string.IsNullOrEmpty(userUpdateDto.Name))
+        {
             updateUser.Name = userUpdateDto.Name;
-        if (!string.IsNullOrWhiteSpace(userUpdateDto.Email))
+        }
+
+        if (userUpdateDto.Email != null)
+        {
             updateUser.Email = userUpdateDto.Email;
-        if(!string.IsNullOrWhiteSpace(userUpdateDto.PasswordHash))
+        }
+
+
+        if (userUpdateDto.PasswordHash != null)
+        {
             updateUser.PasswordHash = userUpdateDto.PasswordHash;
+        }
         
         await _context.SaveChangesAsync();
         return new UserDto

@@ -3,7 +3,6 @@ using Ecommerce.Application.Interface;
 using Ecommerce.Domain.Entities;
 using Ecommerce.Domain.Exceptions;
 using Ecommerce.Infrastructure.Data;
-using Ecommerce.Infrastructure.Validators;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ecommerce.Infrastructure.Services;
@@ -11,12 +10,10 @@ namespace Ecommerce.Infrastructure.Services;
 public class CategoryService : ICategoryService
 {
     private readonly ApplicationDbContext _context; 
-    private readonly CategoryValidator  _validator;
 
-    public CategoryService(ApplicationDbContext context, CategoryValidator validator)
+    public CategoryService(ApplicationDbContext context)
     {
         _context = context;
-        _validator = validator;
     }
     public async Task<IEnumerable<CategoryDto>> GetAllCategories()
     {
@@ -51,7 +48,6 @@ public class CategoryService : ICategoryService
 
     public async Task<CategoryDto> CreateCategory(CategoryCreateDto categoryCreateDto)
     {
-        _validator.ValidateCreateCategory(categoryCreateDto);
 
         var category = new Category
         {
@@ -70,7 +66,6 @@ public class CategoryService : ICategoryService
 
     public  async Task<CategoryDto> UpdateCategory(int id, CategoryUpdateDto categoryUpdateDto)
     {
-        _validator.ValidateUpdateCategory(categoryUpdateDto);
         var categoryUpdate =  await _context.Categories.FindAsync(id);
         if (categoryUpdate == null)
         {
